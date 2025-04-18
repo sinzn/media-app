@@ -1,0 +1,68 @@
+<body style="text-align: center;">
+  <h2>Welcome, <%= user.username %> (<%= user.role %>)</h2>
+  <a href="/logout">Logout</a>
+  <% if (user.role === 'admin') { %>
+    | <a href="/upload">Upload File</a>
+  <% } %>
+
+  <h3>Uploaded Files</h3>
+  <table border="1" align="center" cellpadding="10">
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Uploaded At</th>
+      <th>Play</th>
+      <th>Download</th>
+      <% if (user.role === 'admin') { %><th>Delete</th><% } %>
+    </tr>
+    <% files.forEach(file => { %>
+      <tr>
+        <td><%= file.originalname %></td>
+        <td><%= file.filename.endsWith('.mp4') ? 'Video' : 'Audio' %></td>
+        <td><%= file.uploaded_at.toLocaleString() %></td>
+        <td><a href="javascript:void(0);" onclick="openPlayer('<%= file.filename %>')">Play</a></td>
+        <td><a href="/<%= file.filename %>" download>Download</a></td>
+        <% if (user.role === 'admin') { %>
+          <td><a href="/delete/<%= file.id %>">Delete</a></td>
+        <% } %>
+      </tr>
+    <% }); %>
+  </table>
+
+  <script>
+    function openPlayer(filename) {
+      const url = `/play/${filename}`;
+      const isVideo = filename.endsWith('.mp4');
+
+      // Set default width and height for the player window
+      const contentWidth = isVideo ? 1280 : 600; // Adjust the width based on the content (video or audio)
+      const contentHeight = isVideo ? 720 : 300; // Adjust the height for video and audio
+
+      // Open a popup window
+      const playerWindow = window.open(url, 'MediaPlayer', `width=${contentWidth},height=${contentHeight},resizable=yes`);
+
+      // Adjust the player window size after media is loaded to fit video/audio
+      playerWindow.addEventListener('load', () => {
+        const mediaElement = playerWindow.document.querySelector('video, audio');
+
+        // For video, use object-fit to ensure it fits within the window
+        if (mediaElement && mediaElement.tagName.toLowerCase() === 'video') {
+          mediaElement.style.width = '100%';
+          mediaElement.style.height = '100%';
+          mediaElement.style.objectFit = 'contain'; // Ensures video fits in the window without distortion
+
+          // Check if the video is in vertical orientation (portrait mode)
+          const video = playerWindow.document.querySelector('video');
+          video.onloadedmetadata = () => {
+            if (video.videoHeight > video.videoWidth) {
+              // Adjust video player height and width if the video is in portrait mode (vertical)
+              video.style.height = '100%';
+              video.style.width = 'auto';
+            }
+          };
+        }
+      });
+    }
+  </script>
+</body>
+</html>
